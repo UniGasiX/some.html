@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="zh_CN">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <link href="https://cdn.bootcss.com/twitter-bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
+
+    <title>使用HTML的Canvas生成类似圆形公章的图案 v0.1.2 by UniGasiX</title>
+</head>
+
+<body style="background-color: rgba(0, 0, 0, 0.015);">
+    <div class="container mt-2">
+        <noscript>
+            <div class="alert alert-danger" role="alert">
+                抱歉，您的浏览器没有或者没有开启 JavaScript 功能，请开启此功能或更换浏览器以便正常使用本页面。
+            </div>
+        </noscript>
+        <h1>使用HTML的Canvas生成类似圆形公章的图案</h1>
+        <hr>
+        <div style="text-indent: 2em;">
+            <p>本页面提供使用 HTML 的 Canvas 元素绘制类似圆形公章图案的功能。</p>
+            <p> <strong>注意</strong>：
+                本页面 JavaScript 程序使用的 API <strong>并非所有浏览器都支持</strong>，
+                推荐使用最新版本的 Google Chrome 浏览器或基于 Chromium 的新版 Microsoft Edge 浏览器访问本页面，
+                且在 Chrome 上可能需要开启 <a href="chrome://flags/#enable-experimental-web-platform-features" title="链接指向 Chrome 浏览器的该项设置" target="_blank">Experimental Web Platform features</a> 功能。
+                在<strong>不支持的浏览器</strong>上可能<strong>无法绘制</strong>公章图案的<strong>外圈文字</strong>甚至完全无法绘制。
+                此外，可使用的<strong>字体受限于浏览器</strong>拥有的字体。
+            </p>
+            <p>您可以在下方“设置”栏设置图案绘制的参数，然后点击“绘制”按钮生成图案，生成图案在“图案”一栏。
+                若需保存生成的图案，请点击“图案”栏的“获取图片”按钮，然后点击按钮旁出现的链接下载图片，图片文件的格式为 PNG 。</p>
+        </div>
+        <hr>
+        <div class="row">
+            <div class="col-md-5 mb-3">
+                <h2>图案</h2>
+                <p class="text-right">
+                    <button type="button" class="btn btn-primary shadow-sm" onclick="getThePngOfCanvas()">
+                        获取图片
+                    </button>&nbsp;
+                    <a href="" id="downloadLink" hidden download="pic">点击此处下载图片</a>
+                </p>
+                <canvas id="thecanvas" class="border border-light rounded shadow-sm w-100">
+                    <div class="alert alert-danger" role="alert">
+                        抱歉，您的浏览器对本页面程序使用的 API 完全不支持，请更换浏览器以便正常使用本页面。
+                    </div>
+                </canvas>
+            </div>
+            <div class="col">
+                <h2>设置</h2>
+                <div class="row">
+                    <div class="col">
+                        <form onsubmit="return drawIt()" onreset="resetSth()">
+                            <div class="form-group text-right">
+                                <input type="reset" class="btn btn-warning shadow-sm" value="重置">
+                                <input type="submit" class="btn btn-primary shadow-sm" value="绘制">
+                            </div>
+
+                            <div class="form-group shadow-sm accordion" id="accordionOfSettingForm">
+                                <div class="card">
+                                    <div id="basicSettings">
+                                        <h2 class="mb-0">
+                                            <button class="btn btn-link" type="button" data-toggle="collapse"
+                                                data-target="#collapse_basicSettings" aria-expanded="true"
+                                                aria-controls="collapse_basicSettings">
+                                                基础设置
+                                            </button>
+                                        </h2>
+                                    </div>
+                                    <div id="collapse_basicSettings" class="collapse show"
+                                        aria-labelledby="basicSettings" data-parent="#accordionOfSettingForm">
+                                        <div class="card-body">
+                                            <div class="form-group row">
+                                                <label for="color" class="col-md-5 col-form-label">颜色：</label>
+                                                <div class="col-md-7">
+                                                    <input type="color" id="color" class="form-control w-50"
+                                                        placeholder="颜色" value="#FF0000">
+                                                </div>
+                                            </div>
+                                            <div class="form-group row">
+                                                <label for="bgColor" class="col-md-5 col-form-label">背景色：</label>
+                                                <div class="col-md-7">
+                                                    <select class="form-control" id="bgColor">
+                                                        <option value="transparent" selected>透明</option>
+                                                        <option value="white">白色</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="form-group row">
+                                                <label for="radius" class="col-md-5 col-form-label">半径（像素px）：</label>
+                                                <div class="col-md-7">
+                                                    <input type="number" id="radius" class=" form-control" step="1"
+                                                        placeholder="半径（像素px）" value="500">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card">
+                                    <div id="aboutOuterCircle">
+                                        <h2 class="mb-0">
+                                            <button class="btn btn-link collapsed" type="button" data-toggle="collapse"
+                                                data-target="#collapse_aboutOterCircle" aria-expanded="false"
+                                                aria-controls="collapse_aboutOterCircle">
+                                                红圈
+                                            </button>
+                                        </h2>
+                                    </div>
+                                    <div id="collapse_aboutOterCircle" class="collapse"
+                                        aria-labelledby="aboutOuterCircle" data-parent="#accordionOfSettingForm">
+                                        <div class="card-body">
+                                            <div class="form-group row">
+                                                <label for="outerCircleLineWidth"
+                                                    class="col-md-5 col-form-label">红圈粗细（像素px）：</label>
+                                                <div class="col-md-7">
+                                                    <input type="number" id="outerCircleLineWidth" step="1"
+                                                        class="form-control" placeholder="红圈粗细（像素px）" value="20">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card">
+                                    <div id="aboutTopText">
+                                        <h2 class="mb-0">
+                                            <button class="btn btn-link collapsed" type="button" data-toggle="collapse"
+                                                data-target="#collapse_aboutTopText" aria-expanded="false"
+                                                aria-controls="collapse_aboutTopText">
+                                                顶部文字
+                                            </button>
+                                        </h2>
+                                    </div>
+                                    <div id="collapse_aboutTopText" class="collapse" aria-labelledby="aboutTopText"
+                                        data-parent="#accordionOfSettingForm">
+                                        <div class="card-body">
+                                            <div class="form-group custom-control custom-checkbox">
+                                                <input type="checkbox" class="custom-control-input" id="showTopText"
+                                                    checked>
+                                                <label class="custom-control-label" for="showTopText">是否画顶部文字</label>
+                                            </div>
+                                            <div class="form-group row">
+                                                <label for="topText" class="col-md-5 col-form-label">顶部文字：</label>
+                                                <div class="col-md-7">
+                                                    <input type="text" id="topText" class="form-control"
+                                                        placeholder="上部标题" value="顶部文字顶部文字顶部文字">
+                                                </div>
+                                            </div>
+                                            <div class="form-group row">
+                                                <label for="topTextFontCss" class="col-md-5 col-form-label">顶部文字字体相关（同
+                                                    CSS font）：</label>
+                                                <div class="col-md-7">
+                                                    <input type="text" id="topTextFontCss" class="form-control"
+                                                        placeholder="顶部文字字体相关（同 CSS font）" value="200px 仿宋">
+                                                </div>
+                                            </div>
+                                            <div class="form-group row">
+                                                <label for="topTextPercentage"
+                                                    class="col-md-5 col-form-label">顶部文字圆周占比（小数）：</label>
+                                                <div class="col-md-7">
+                                                    <input type="number" id="topTextPercentage" class="form-control"
+                                                        step="0.01" placeholder="顶部文字圆周占比（小数）" value="0.65">
+                                                </div>
+                                            </div>
+                                            <div class="form-group row">
+                                                <label for="topTextTopMargin"
+                                                    class="col-md-5 col-form-label">顶部文字到顶部距离（像素px）：</label>
+                                                <div class="col-md-7">
+                                                    <input type="number" id="topTextTopMargin" class="form-control"
+                                                        step="1" placeholder="顶部文字到顶部距离（像素px）" value="10">
+                                                </div>
+                                            </div>
+                                            <div class="form-group row">
+                                                <label for="topCharWidthPercentage"
+                                                    class="col-md-5 col-form-label">顶部文字字符宽度比例（小数）：</label>
+                                                <div class="col-md-7">
+                                                    <input type="number" id="topCharWidthPercentage"
+                                                        class="form-control" step="0.01" placeholder="顶部文字字符宽度比例（小数）"
+                                                        value="0.6">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card">
+                                    <div id="aboutStar">
+                                        <h2 class="mb-0">
+                                            <button class="btn btn-link collapsed" type="button" data-toggle="collapse"
+                                                data-target="#collapse_aboutStar" aria-expanded="false"
+                                                aria-controls="collapse_aboutStar">
+                                                五角星
+                                            </button>
+                                        </h2>
+                                    </div>
+                                    <div id="collapse_aboutStar" class="collapse" aria-labelledby="aboutStar"
+                                        data-parent="#accordionOfSettingForm">
+                                        <div class="card-body">
+                                            <div class="form-group custom-control custom-checkbox">
+                                                <input type="checkbox" class="custom-control-input" id="showStar"
+                                                    checked>
+                                                <label class="custom-control-label" for="showStar">是否画五角星</label>
+                                            </div>
+                                            <div class="form-group row">
+                                                <label for="starRadius"
+                                                    class="col-md-5 col-form-label">五角星半径长度（像素px）：</label>
+                                                <div class="col-md-7">
+                                                    <input type="number" id="starRadius" class="form-control" step="1"
+                                                        placeholder="五角星半径长度（像素px）" value="120">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card">
+                                    <div id="aboutSubText">
+                                        <h2 class="mb-0">
+                                            <button class="btn btn-link collapsed" type="button" data-toggle="collapse"
+                                                data-target="#collapse_SubText" aria-expanded="false"
+                                                aria-controls="collapse_SubText">
+                                                中部文字
+                                            </button>
+                                        </h2>
+                                    </div>
+                                    <div id="collapse_SubText" class="collapse" aria-labelledby="aboutSubText"
+                                        data-parent="#accordionOfSettingForm">
+                                        <div class="card-body">
+                                            <div class="form-group custom-control custom-checkbox">
+                                                <input type="checkbox" class="custom-control-input" id="showSubText"
+                                                    checked>
+                                                <label class="custom-control-label" for="showSubText">是否画中部文字</label>
+                                            </div>
+                                            <div class="form-group row">
+                                                <label for="subText" class="col-md-5 col-form-label">中部文字：</label>
+                                                <div class="col-md-7">
+                                                    <input type="text" id="subText" class="form-control"
+                                                        placeholder="中部文字" value="中部文字">
+                                                </div>
+                                            </div>
+                                            <div class="form-group row">
+                                                <label for="subTextFontCss" class="col-md-5 col-form-label">中部文字字体相关（同
+                                                    CSS font）：</label>
+                                                <div class="col-md-7">
+                                                    <input type="text" id="subTextFontCss" class="form-control"
+                                                        placeholder="中部文字字体相关（同 CSS font）" value="60px 宋体">
+                                                </div>
+                                            </div>
+                                            <div class="form-group row">
+                                                <label for="subTextY"
+                                                    class="col-md-5 col-form-label">中部文字偏离圆心距离（像素px）：</label>
+                                                <div class="col-md-7">
+                                                    <input type="number" id="subTextY" class="form-control" step="1"
+                                                        placeholder="中部文字偏离圆心距离（像素px）" value="200">
+                                                </div>
+                                            </div>
+                                            <div class="form-group row">
+                                                <label for="subTextWidthPercentage"
+                                                    class="col-md-5 col-form-label">中部文字宽度比例（小数）：</label>
+                                                <div class="col-md-7">
+                                                    <input type="number" id="subTextWidthPercentage"
+                                                        class="form-control" step="0.01" placeholder="中部文字宽度比例（小数）"
+                                                        value="1">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card">
+                                    <div id="aboutBottomText">
+                                        <h2 class="mb-0">
+                                            <button class="btn btn-link collapsed" type="button" data-toggle="collapse"
+                                                data-target="#collapse_bottomText" aria-expanded="false"
+                                                aria-controls="collapse_bottomText">
+                                                底部文字
+                                            </button>
+                                        </h2>
+                                    </div>
+                                    <div id="collapse_bottomText" class="collapse" aria-labelledby="aboutBottomText"
+                                        data-parent="#accordionOfSettingForm">
+                                        <div class="card-body">
+                                            <div class="form-group custom-control custom-checkbox">
+                                                <input type="checkbox" class="custom-control-input" id="showBottomText"
+                                                    checked>
+                                                <label class="custom-control-label" for="showBottomText">是否画底部文字</label>
+                                            </div>
+                                            <div class="form-group row">
+                                                <label for="bottomText" class="col-md-5 col-form-label">底部文字：</label>
+                                                <div class="col-md-7">
+                                                    <input type="text" id="bottomText" class="form-control"
+                                                        placeholder="底部文字" value="底部文字">
+                                                </div>
+                                            </div>
+                                            <div class="form-group row">
+                                                <label for="bottomTextFontCss"
+                                                    class="col-md-5 col-form-label">底部文字字体相关（同 CSS font）：</label>
+                                                <div class="col-md-7">
+                                                    <input type="text" id="bottomTextFontCss" class="form-control"
+                                                        placeholder="底部文字字体相关（同 CSS font）" value="125px 黑体">
+                                                </div>
+                                            </div>
+                                            <div class="form-group row">
+                                                <label for="bottomTextPercentage"
+                                                    class="col-md-5 col-form-label">底部文字占圆周比例（小数）：</label>
+                                                <div class="col-md-7">
+
+                                                    <input type="number" id="bottomTextPercentage" class="form-control"
+                                                        step="0.01" placeholder="底部文字占圆周比例（小数）" value="0.15"> </div>
+                                            </div>
+                                            <div class="form-group row">
+                                                <label for="bottomTextBottomMargin"
+                                                    class="col-md-5 col-form-label">底部文字与底部距离（像素px）：</label>
+                                                <div class="col-md-7">
+                                                    <input type="number" id="bottomTextBottomMargin"
+                                                        class="form-control" step="1" placeholder="底部文字与底部距离（像素px）"
+                                                        value="10">
+                                                </div>
+                                            </div>
+                                            <div class="form-group row">
+                                                <label for="bottomCharWidthPercentage"
+                                                    class="col-md-5 col-form-label">底部文字字符宽度比例（小数）：</label>
+                                                <div class="col-md-7">
+                                                    <input type="number" id="bottomCharWidthPercentage"
+                                                        class="form-control" step="0.01" placeholder="底部文字字符宽度比例（小数）"
+                                                        value="0.7">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                <hr>
+                <div class="row">
+                    <div class="col">
+                        <form onsubmit="return drawJson()">
+                            <div class="form-group">
+                                <label for="settingsJson">设置的JSON格式：</label>
+                                <textarea id="settingsJson" class="form-control shadow-sm"
+                                    placeholder="设置的JSON格式"></textarea>
+                                <small class="form-text text-muted">
+                                    可以通过保存当前设置的JSON格式文本保存当前设置。<br>
+                                    当使用的本页面版本、设置以及包括浏览器在内的其他环境相同时，可以生成相同的图案。
+                                </small>
+                            </div>
+                            <div class="form-group text-right">
+                                <span id="jsonRelatedError" class="text-danger"></span>
+                                <input type="submit" class="btn btn-primary shadow-sm" value="使用以上JSON格式设置绘制">
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <hr>
+        <p class="text-muted">
+            使用HTML的Canvas生成类似圆形公章的图案 v0.1.2<br>
+            &copy; 2020 UniGasiX
+        </p>
+    </div>
+
+
+    <script src="https://cdn.bootcss.com/jquery/3.4.0/jquery.slim.min.js"></script>
+    <script src="https://cdn.bootcss.com/twitter-bootstrap/4.3.1/js/bootstrap.bundle.min.js"></script>
+
+    <script src="./code.js"></script>
+
+</body>
+
+</html>
